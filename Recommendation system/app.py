@@ -4,12 +4,12 @@ from flask_marshmallow import Marshmallow
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity, jwt_required
 
-from models import Authors, Composition, Authentification
-from schemas import Authors_Schema, Composition_Schema, Authentification_Schema
+from models import Author, Composition, Authentification
+from schemas import Author_Schema, Composition_Schema, Authentification_Schema
 from settings import Config
 
 
-author_schema = Authors_Schema()
+author_schema = Author_Schema()
 composition_schema = Composition_Schema()
 authentification_schema = Authentification_Schema()
 
@@ -65,7 +65,7 @@ def register_routes(app):
     def creat_author():
         author_text = request.get_json()
         author_data = author_schema.load(author_text)
-        authors = Authors(**author_data)
+        authors = Author(**author_data)
         authors.save()
         return {"id": str(authors.id)}, 201
 
@@ -76,5 +76,20 @@ def register_routes(app):
         composition = Composition(**composition_data)
         composition.save()
         return {"id": str(composition.id)}, 201
+
+    @app.route("/authors", methods=["GET"])
+    def authors():
+        author = Author.objects.all()
+        if author == None:
+            return {"message": "Author is absend"}, 404
+        return {"Authors": [author_schema.dump(i) for i in author]}, 200
+
+    @app.route("/compositions", methods=["GET"])
+    def compositions():
+        name_author = Author.objects().first()
+        composition = Composition.objects.all()
+        if composition == None:
+            return {"message": "Composition is absend"}, 404
+        return {"Compositions": [composition_schema.dump(i) for i in composition]}, 200
 
 creat_app()
