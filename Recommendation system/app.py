@@ -7,6 +7,7 @@ from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity
 from models import Author, Composition, Authentification
 from schemas import Author_Schema, Composition_Schema, Authentification_Schema
 from settings import Config
+from exceptions import AbsentAuthorInBd, AbsentCompositionInBd
 
 
 author_schema = Author_Schema()
@@ -61,7 +62,7 @@ def register_routes(app):
         token = create_access_token(identity=user["login"])
         return {"access token": token}, 200
 
-    @app.route("/author", methods=["POST"])
+    @app.route("/creat_author", methods=["POST"])
     def creat_author():
         author_text = request.get_json()
         author_data = author_schema.load(author_text)
@@ -69,7 +70,7 @@ def register_routes(app):
         authors.save()
         return {"id": str(authors.id)}, 201
 
-    @app.route("/composition", methods=["POST"])
+    @app.route("/creat_composition", methods=["POST"])
     def creat_composition():
         composition_text = request.get_json()
         composition_data = composition_schema.load(composition_text)
@@ -78,18 +79,27 @@ def register_routes(app):
         return {"id": str(composition.id)}, 201
 
     @app.route("/authors", methods=["GET"])
-    def authors():
-        author = Author.objects.all()
-        if author == None:
-            return {"message": "Author is absend"}, 404
-        return {"Authors": [author_schema.dump(i) for i in author]}, 200
+    def authors():  
+        authors = Author.objects.all()
+        return {"Authors": [author_schema.dump(i) for i in authors]}, 200
 
     @app.route("/compositions", methods=["GET"])
     def compositions():
-        name_author = Author.objects().first()
         composition = Composition.objects.all()
-        if composition == None:
-            return {"message": "Composition is absend"}, 404
         return {"Compositions": [composition_schema.dump(i) for i in composition]}, 200
+
+    @app.route("/author/<id>", methods=["GET"])
+    def author(id):
+        author = Author.objects(id = id).first()
+        if author == None:
+            raise AbsentAuthorInBd(id)
+        return author_schema.dump(author), 200
+
+    @app.route("/composition/<id>", methods=["GET"])
+    def composition(id):
+        composition = Composition.objects(id = id).first()
+        if composition == None:
+            raise AbsentCompositionInBd(id)
+        return composition_schema.dump(composition), 200
 
 creat_app()
