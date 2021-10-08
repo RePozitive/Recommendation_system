@@ -7,7 +7,7 @@ from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity
 from models import Author, Composition, Authentification
 from schemas import Author_Schema, Composition_Schema, Authentification_Schema
 from settings import Config
-from exceptions import AbsentAuthorInBd, AbsentCompositionInBd
+from exceptions import AbsentAuthorInBd, AbsentCompositionInBd, FalseLogin, ErrorPaswords, ErrorLoginOrPassword
 
 
 author_schema = Author_Schema()
@@ -36,12 +36,12 @@ def register_routes(app):
         user = Authentification.objects(login=registration_data["login"]).first()
 
         if user != None:
-            return {"message": "This login already exists"}, 404
+            raise FalseLogin()
 
         password_hash = generate_password_hash(registration_data["first_password"])
 
         if check_password_hash(password_hash, registration_data["second_password"]) == False:
-            return {"message": "Passwords don't match"}, 404
+            raise ErrorPaswords()
         
         new_user = Authentification(login = registration_data["login"], first_password = password_hash, second_password = password_hash)
         new_user.save()
@@ -57,7 +57,7 @@ def register_routes(app):
         user = Authentification.objects(login=authorization_data["login"]).first()
 
         if user == None or check_password_hash(user["first_password"], authorization_data["first_password"]) == False:
-            return {"message": "The username or password is incorrect"}, 404
+            raise ErrorLoginOrPassword()
 
         token = create_access_token(identity=user["login"])
         return {"access token": token}, 200
