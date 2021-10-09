@@ -102,4 +102,13 @@ def register_routes(app):
             raise AbsentCompositionInBd(id)
         return composition_schema.dump(composition), 200
 
+    @app.route("/update_author/<id>", methods=["PUT"])
+    def update_author(id):
+        update_text = request.get_json()
+        update_data = author_schema.load(update_text)
+        author = Author.objects(id = id).update_one(upsert=False, **update_data)
+        if not author:
+            raise AbsentAuthorInBd(id)
+        return {"message": "Successfully update author"}, 200
+
 creat_app()
