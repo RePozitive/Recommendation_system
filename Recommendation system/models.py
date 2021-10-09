@@ -14,7 +14,7 @@ class Author(me.Document):
     date_born = me.DateField()
     date_death = me.DateField()
     biography = me.StringField()
-    #composition = me.ReferenceField(Composition)
+    composition = me.ReferenceField("Composition")
     
 class Composition(me.Document):                                           # Произведение 
     image_url = me.StringField()
