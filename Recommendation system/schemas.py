@@ -12,21 +12,25 @@ class Authentification_Schema(ma.Schema):
     first_password = ma.fields.String()
     second_password = ma.fields.String()
 
-class Author_Schema(ma.Schema):
-    image_url = ma.fields.String()
+class AuthorFIO_Schema(ma.Schema):
     name = ma.fields.String()
     surname = ma.fields.String()
     patronymic = ma.fields.String()
+
+class Author_Schema(AuthorFIO_Schema):
+    image_url = ma.fields.String()
     date_born = ma.fields.Date()
     date_death = ma.fields.Date()
     biography = ma.fields.String()
-    #composition = ma.fields.String()
+    composition = Nested("CompositionName_Schema")
 
-class Composition_Schema(ma.Schema):
+class CompositionName_Schema(ma.Schema):
+        name = ma.fields.String()
+
+class Composition_Schema(CompositionName_Schema):
     image_url = ma.fields.String()
-    name = ma.fields.String()
     date = ma.fields.Date()
-    author = Nested("Author_Schema")
+    author = Nested("AuthorFIO_Schema")
 
 class System_Schema(ma.Schema):
     composition = Nested("Composition_Schema")
