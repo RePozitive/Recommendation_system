@@ -25,7 +25,7 @@ class Author_Schema(AuthorFIO_Schema):
     composition = Nested("CompositionName_Schema")
 
 class CompositionName_Schema(ma.Schema):
-        name = ma.fields.String()
+    name = ma.fields.String()
 
 class Composition_Schema(CompositionName_Schema):
     image_url = ma.fields.String()
