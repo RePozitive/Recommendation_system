@@ -1,4 +1,3 @@
-from typing_extensions import IntVar
 from flask import Flask, request, abort, jsonify
 from flask_mongoengine import MongoEngine
 from flask_marshmallow import Marshmallow
@@ -42,6 +41,7 @@ def register_routes(app):
 
         registration_text = request.get_json()
         registration_data = authentification_schema.load(registration_text)
+
         user = Authentification.objects(login=registration_data["login"]).first()
 
         if user != None:
@@ -91,23 +91,27 @@ def register_routes(app):
         return {"id": str(composition.id)}, 201
 
     @app.route("/authors", methods=["GET"])
+    @jwt_required()
     def authors():  
         authors = Author.objects.all()
         return {"Authors": [author_schema.dump(i) for i in authors]}, 200
 
     @app.route("/compositions", methods=["GET"])
+    @jwt_required()
     def compositions():
         composition = Composition.objects.all()
         return {"Compositions": [composition_schema.dump(i) for i in composition]}, 200
 
-    @app.route("/author/<id>", methods=["GET"])                             
+    @app.route("/author/<id>", methods=["GET"])
+    @jwt_required()                             
     def author(id):
         author = Author.objects(id = id).first()
         if author == None:
             raise InvalidUsage.AuthorIsAbsent()
         return author_schema.dump(author), 200
 
-    @app.route("/composition/<id>", methods=["GET"])                        
+    @app.route("/composition/<id>", methods=["GET"])
+    @jwt_required()                        
     def composition(id):
         composition = Composition.objects(id = id).first()
         if composition == None:
