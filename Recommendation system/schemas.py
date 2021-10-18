@@ -1,14 +1,17 @@
 import marshmallow as ma
 from bson import ObjectId
-
+from marshmallow import validates, ValidationError, validate
+from exceptions import InvalidUsage
+from flask import jsonify
 
 class Nested(ma.fields.Nested):
     """A nested field that deserializes from bson.ObjectId string and serializes to nested object"""
     def _deserialize(self, value, attr, data, partial=None, **kwargs):
         return ObjectId(value)
 
-class Authentification_Schema(ma.Schema):
-    login = ma.fields.String()
+class User_Schema(ma.Schema):
+    role = ma.fields.String()
+    login = ma.fields.String(validate=validate.Length(min=3, max=30))
     first_password = ma.fields.String()
     second_password = ma.fields.String()
 
