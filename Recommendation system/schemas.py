@@ -1,6 +1,7 @@
 import marshmallow as ma
 from bson import ObjectId
 from marshmallow import validates, ValidationError, validate
+from marshmallow.decorators import validates_schema
 from exceptions import InvalidUsage
 from flask import jsonify
 
@@ -10,7 +11,7 @@ class Nested(ma.fields.Nested):
         return ObjectId(value)
 
 class User_Schema(ma.Schema):
-    role = ma.fields.String()
+    role = ma.fields.String(validate=validate.OneOf(["admin", "user"]))
     login = ma.fields.String(validate=validate.Length(min=3, max=30))
     first_password = ma.fields.String()
     second_password = ma.fields.String()
