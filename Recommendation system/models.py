@@ -1,7 +1,8 @@
 import mongoengine as me
 
 
-class Authentification(me.Document):
+class User(me.Document):
+    role = me.StringField()
     login = me.StringField(min_length=3, max_length=30)
     first_password = me.StringField(min_length=5)
     second_password = me.StringField(min_length=5)
