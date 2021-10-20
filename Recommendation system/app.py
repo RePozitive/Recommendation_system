@@ -1,8 +1,6 @@
-import re
 from flask import Flask, request, abort, jsonify
 from flask_mongoengine import MongoEngine
 from flask_marshmallow import Marshmallow
-from werkzeug.exceptions import BadRequest
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity, jwt_manager, jwt_required, current_user
 
@@ -53,12 +51,15 @@ def register_routes(app):
 
         registration_text = request.get_json()
         registration_data = user_schema.load(registration_text)
+        user_name = User.objects(login=registration_data["login"]).first()
+        user_first_password = User.objects(first_password = registration_data["first_password"]).first()
+        user_second_password = User.objects(second_password = registration_data["second_password"]).first()
 
-        
-        user = User.objects(login=registration_data["login"]).first()
-
-        if user != None:
+        if user_name != None:
             raise InvalidUsage.UserAlreadyRegistered()
+
+        if not user_first_password or user_second_password: 
+            raise InvalidUsage.TheLackOfPasswords()
 
         password_hash = generate_password_hash(registration_data["first_password"])
 
@@ -80,16 +81,13 @@ def register_routes(app):
 
         if user == None or check_password_hash(user["first_password"], authorization_data["first_password"]) == False:
             raise InvalidUsage.ErrorLoginOrPassword()
-
         token = create_access_token(identity=user["login"])
-        print(user["login"])
         return {"access token": token}, 201
-
 
     @app.route("/creat_author", methods=["POST"])
     @jwt_required()
     def creat_author():
-        if current_user.role == 'admin':
+        if current_user.role == 'admin' or 'SuperAdmin':
             author_text = request.get_json()
             author_data = author_schema.load(author_text)
             authors = Author(**author_data)
@@ -100,7 +98,7 @@ def register_routes(app):
 
     @app.route("/creat_composition", methods=["POST"])
     def creat_composition():
-        if current_user.role == 'admin':
+        if current_user.role == 'admin' or 'SuperAdmin':
             composition_text = request.get_json()
             composition_data = composition_schema.load(composition_text)
             composition_author = Author.objects(id = composition_data["author"]).first()
@@ -115,7 +113,7 @@ def register_routes(app):
     @app.route("/authors", methods=["GET"])
     @jwt_required()
     def authors(): 
-        if current_user.role == 'user': 
+        if current_user.role == 'user' or 'admin' or 'SuperAdmin': 
             authors = Author.objects.all()
             return {"Authors": [author_schema.dump(i) for i in authors]}, 200
         else:
@@ -124,7 +122,7 @@ def register_routes(app):
     @app.route("/compositions", methods=["GET"])
     @jwt_required()
     def compositions():
-        if current_user.role == 'user':
+        if current_user.role == 'user' or 'admin' or 'SuperAdmin':
             composition = Composition.objects.all()
             return {"Compositions": [composition_schema.dump(i) for i in composition]}, 200
         else:
@@ -133,7 +131,7 @@ def register_routes(app):
     @app.route("/author/<id>", methods=["GET"])
     @jwt_required()                             
     def author(id):
-        if current_user.role == 'user':
+        if current_user.role == 'user' or 'admin' or 'SuperAdmin':
             author = Author.objects(id = id).first()
             if author == None:
                 raise InvalidUsage.AuthorIsAbsent()
@@ -144,7 +142,7 @@ def register_routes(app):
     @app.route("/composition/<id>", methods=["GET"])
     @jwt_required()                        
     def composition(id):
-        if current_user.role == 'user':
+        if current_user.role == 'user' or 'admin' or 'SuperAdmin':
             composition = Composition.objects(id = id).first()
             if composition == None:
                 raise InvalidUsage.CompositionIsAbsent()
@@ -168,8 +166,9 @@ def register_routes(app):
             raise InvalidUsage.AccessSuperAdmin()
 
     @app.route("/update_author/<id>", methods=["PUT"])
+    @jwt_required()
     def update_author(id):
-        if current_user.role == 'admin':
+        if current_user.role == 'admin' or 'SuperAdmin':
             update_text = request.get_json()
             update_data = author_schema.load(update_text)
             author_composition = Composition.objects(id = update_data["composition"]).first()
@@ -183,8 +182,9 @@ def register_routes(app):
             raise InvalidUsage.AccessAdmin()
 
     @app.route("/update_composition/<id>", methods=["PUT"])
+    @jwt_required()
     def update_composition(id):
-        if current_user.role == 'admin':
+        if current_user.role == 'admin' or 'SuperAdmin':
             update_text = request.get_json()
             update_data = composition_schema.load(update_text)
             composition_author = Author.objects(id = update_data["author"]).first()
@@ -198,8 +198,9 @@ def register_routes(app):
             raise InvalidUsage.AccessAdmin()
 
     @app.route("/delete_author/<id>", methods=["DELETE"])
+    @jwt_required()
     def delete_author(id):
-        if current_user.role == 'admin':
+        if current_user.role == 'admin' or 'SuperAdmin':
             delete = Author.objects(id = id).delete()
             if not delete:
                 raise InvalidUsage.AuthorIsAbsent()
@@ -208,13 +209,25 @@ def register_routes(app):
             raise InvalidUsage.AccessAdmin()
 
     @app.route("/delete_composition/<id>", methods=["DELETE"])
+    @jwt_required()
     def delete_composition(id):
-        if current_user.role == 'admin':
+        if current_user.role == 'admin' or 'SuperAdmin':
             delete = Composition.objects(id = id).delete()
             if not delete:
                 raise InvalidUsage.CompositionIsAbsent()
             return {"message": "Successfully delete composition"}, 201
         else:
             raise InvalidUsage.AccessAdmin()
+
+    @app.route("/delete_user/<id>", methods=["DELETE"])
+    @jwt_required()
+    def delete_user(id):
+        if current_user.role == "SuperAdmin":
+            delete = User.objects(id = id).delete()
+            if not delete:
+                raise InvalidUsage.UserIsAbsent()
+            return {"message": "Successfully delete user"}
+        else:
+            raise InvalidUsage.AccessSuperAdmin()
 
 creat_app()
