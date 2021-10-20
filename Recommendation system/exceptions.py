@@ -16,7 +16,8 @@ Authorisation_Error = template(["Authorisation is not found"], code=401)
 Privilege_Admin = template(["You don't have rights to this section"], code=403)
 Privilege_User = template(["To get access, you need to register"], code=403)
 Privilege_SuperAdmin = template(["You don't have rights to this section"], code=403)
-
+Lack_of_password = template(["Enter your password when registering"], code=401)
+Lack_of_login = template(["Enter your login when registering"], code=401)
 class InvalidUsage(Exception):
     status_code = 500
 
@@ -78,3 +79,11 @@ class InvalidUsage(Exception):
     @classmethod
     def AccessSuperAdmin(cls):
         return cls(**Privilege_SuperAdmin)
+
+    @classmethod
+    def TheLackOfPasswords(cls):
+        return cls(**Lack_of_password)
+
+    @classmethod
+    def TheLackOfLogin(cls):
+        return cls(**Lack_of_login)
