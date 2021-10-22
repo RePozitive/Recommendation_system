@@ -4,14 +4,17 @@ from flask_marshmallow import Marshmallow
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity, jwt_manager, jwt_required, current_user
 
-from models import Author, Composition, User
-from schemas import Author_Schema, Composition_Schema, User_Schema
+from models import Author, Composition, User, Service
+from schemas import Author_Schema, Composition_Schema, User_Schema, Service_Schema, Service_Key_Value
 from settings import Config
 from exceptions import InvalidUsage
+
 
 author_schema = Author_Schema()
 composition_schema = Composition_Schema()
 user_schema = User_Schema()
+service_schema = Service_Schema()
+key_problem = Service_Key_Value()
 
 def creat_app(config_object=Config):
     app = Flask(__name__)
@@ -81,6 +84,7 @@ def register_routes(app):
 
         if user == None or check_password_hash(user["first_password"], authorization_data["first_password"]) == False:
             raise InvalidUsage.ErrorLoginOrPassword()
+
         token = create_access_token(identity=user["login"])
         return {"access token": token}, 201
 
@@ -107,6 +111,27 @@ def register_routes(app):
             composition = Composition(**composition_data)
             composition.save()
             return {"id": str(composition.id)}, 201
+        else:
+            raise InvalidUsage.AccessAdmin()
+
+    @app.route("/creat_service", methods=["POST"])
+    @jwt_required()
+    def creat_main_object():
+        if current_user.role == "admin" or "SuperAdmin":
+            object_text = request.get_json()
+            object_data = key_problem.load(object_text)
+
+            object_author = Author.objects(id = object_data["author"]).first()
+            if object_author == None:
+                raise InvalidUsage.AuthorIsAbsent()
+
+            object_composition = Composition.objects(id = object_data["composition"]).first()
+            if object_composition == None:
+                raise InvalidUsage.CompositionIsAbsent()
+
+            creat_object = Service(**object_data)
+            creat_object.save()
+            return {"id": str(creat_object.id)}, 201
         else:
             raise InvalidUsage.AccessAdmin()
 
@@ -147,6 +172,28 @@ def register_routes(app):
             if composition == None:
                 raise InvalidUsage.CompositionIsAbsent()
             return composition_schema.dump(composition), 200
+        else:
+            raise InvalidUsage.AccessUser()
+
+    @app.route("/service/key_problem=<key>", methods=["GET"])
+    @jwt_required()
+    def all_objects(key):
+        if current_user.role == 'user' or 'admin' or 'SuperAdmin':
+            key_object = Service.objects(key_problem = key).all()
+            if len(key_object) == 0:
+                raise InvalidUsage.ProblemIsAbsent()
+            return {"objects": [service_schema.dump(i) for i in key_object]}
+        else:
+            raise InvalidUsage.AccessUser() 
+
+    @app.route("/service/key_problem=<key>/<id>")
+    @jwt_required()
+    def main_object(key, id):
+        if current_user.role == 'user' or 'admin' or 'SuperAdmin':
+            key_object = Service.objects(key_problem = key, id = id).first()
+            if key_object == None:
+                raise InvalidUsage.ServiceIsAbsent()
+            return service_schema.dump(key_object), 200
         else:
             raise InvalidUsage.AccessUser()
 
