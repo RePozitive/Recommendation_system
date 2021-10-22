@@ -23,10 +23,12 @@ class Composition(me.Document):                                           # Пр
     date = me.DateField()                                                 # Дата написания
     author = me.ReferenceField("Author")                                  # ФИО автора из класса Author 
 
-class System(me.Document):
+class Service(me.Document):
     composition = me.ReferenceField("Composition")
+    author = me.ReferenceField("Author")
     summary = me.StringField()                                            # Краткое содержание
-    main_problem = me.StringField()
+    main_problem = me.StringField()                                       # Основные проблемы произведения
+    key_problem = me.ListField(me.StringField())                          # Ключевой атрибут для поиска произведения по его "проблеме"
     description_problem = me.StringField()                                # Описание проблемы
-    url_link = me.StringField()                                           # Ссылка на источник литературы
+    url_link = me.StringField()                                           # Ссылка на источник c литературой
     
