@@ -1,8 +1,8 @@
 from flask import Flask, request, abort, jsonify
 from flask_mongoengine import MongoEngine
-from flask_marshmallow import Marshmallow
+from marshmallow import ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity, jwt_manager, jwt_required, current_user
+from flask_jwt_extended import create_access_token, JWTManager, get_jwt_identity, jwt_required, current_user
 
 from models import Author, Composition, User, Service
 from schemas import Author_Schema, Composition_Schema, User_Schema, Service_Schema, Service_Key_Value
@@ -44,6 +44,10 @@ def register_errorhandlers(app):
         response.status_code = error.status_code
         return response
     app.errorhandler(InvalidUsage)(errorhandler)
+
+    def validation_errorhandler(error):
+        return jsonify({"message": error.messages}), 400
+    app.register_error_handler(ValidationError, validation_errorhandler)  
 
 def register_routes(app):
 
@@ -244,6 +248,28 @@ def register_routes(app):
         else:
             raise InvalidUsage.AccessAdmin()
 
+    @app.route("/update_service/<id>", methods=["PUT"])
+    @jwt_required()
+    def update_service(id):
+        if current_user.role == 'admin' or 'SuperAdmin':
+            update_text = request.get_json()
+            update_data = key_problem.load(update_text)
+
+            service_author = Author.objects(id = update_data["author"]).first()
+            if service_author == None:
+                raise InvalidUsage.AuthorIsAbsent()
+
+            service_composition = Composition.objects(id = update_data["composition"]).first()
+            if service_composition == None:
+                raise InvalidUsage.CompositionIsAbsent()
+
+            service = Service.objects(id = id).update_one(upsert=False, **update_data)
+            if not service:
+                raise InvalidUsage.ServiceIsAbsent()
+            return {"message": "Successfully update service"}, 201
+        else:
+            raise InvalidUsage.AccessAdmin()
+
     @app.route("/delete_author/<id>", methods=["DELETE"])
     @jwt_required()
     def delete_author(id):
@@ -276,5 +302,15 @@ def register_routes(app):
             return {"message": "Successfully delete user"}
         else:
             raise InvalidUsage.AccessSuperAdmin()
+
+    @app.route("/delete_service/<id>", methods=["DELETE"])
+    @jwt_required()
+    def delete_service(id):
+        if current_user.role == 'admin' or 'SuperAdmin':
+            delete = User.objects(id=id).delete()
+            if not delete:
+                raise InvalidUsage.ServiceIsAbsent()
+        else:
+            raise InvalidUsage.AccessAdmin()
 
 creat_app()
