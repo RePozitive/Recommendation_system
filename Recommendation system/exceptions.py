@@ -1,6 +1,5 @@
 from flask import jsonify
 
-
 def template(data, code=500):
     return {'message': {'errors': {'body': data}}, 'status_code': code}
 
@@ -20,7 +19,6 @@ Privilege_User = template(["To get access, you need to register"], code=403)
 Privilege_SuperAdmin = template(["You don't have rights to this section"], code=403)
 Lack_of_password = template(["Enter your password when registering"], code=401)
 Lack_of_login = template(["Enter your login when registering"], code=401)
-
 
 class InvalidUsage(Exception):
     status_code = 500
