@@ -3,7 +3,6 @@ from bson import ObjectId
 from marshmallow import  validate
 from mongoengine import fields
 
-
 class Nested(ma.fields.Nested):
     """A nested field that deserializes from bson.ObjectId string and serializes to nested object"""
     def _deserialize(self, value, attr, data, partial=None, **kwargs):
