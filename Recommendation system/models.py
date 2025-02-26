@@ -1,6 +1,5 @@
 import mongoengine as me
 
-
 class User(me.Document):
     role = me.StringField()
     login = me.StringField(min_length=3, max_length=30)
@@ -31,4 +30,3 @@ class Service(me.Document):
     key_problem = me.ListField(me.StringField())                          # Ключевой атрибут для поиска произведения по его "проблеме"
     description_problem = me.StringField()                                # Описание проблемы
     url_link = me.StringField()                                           # Ссылка на источник c литературой
-    
