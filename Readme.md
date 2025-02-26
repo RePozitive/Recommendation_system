@@ -1,4 +1,4 @@
-# Creat recommendation system with Flask.
+# Recommendation system with Flask.
 
 Система предназначена для выявления ключевых проблем произведений.
 В системе имеются полные сведения об авторах/произведениях.
